@@ -1,0 +1,5 @@
+# Phase 1 only. Later phases add: watchdog (4), python-docx + openpyxl (5),
+# anthropic (3, cloud fallback tier).
+python-dotenv>=1.0
+requests>=2.31
+pytest>=8.0
