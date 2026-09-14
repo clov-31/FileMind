@@ -15,10 +15,11 @@ Phase 2 — Interactive Chat Agent
 - Ollama fallback
 - Architecture audit
 - TASK-0021 — move_file() ✅ (conditional_pass)
+- TASK-0022 — delete_file() ✅ (Builder done, awaiting Evaluator)
 
 ## In Progress
 
-- TASK-0022 — delete_file() (architect plan done, awaiting Builder)
+- TASK-0022 — Evaluator pass (S-0022-EVL-001)
 
 ## Blocked
 
@@ -38,7 +39,7 @@ None
 
 ### TASK-0022
 
-- None yet. To be surfaced by Builder/Evaluator.
+- None yet. To be surfaced by Evaluator.
 
 ## Important Constraints
 
