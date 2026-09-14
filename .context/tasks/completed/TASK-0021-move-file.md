@@ -2,7 +2,6 @@
 
 Status: DONE (conditional_pass)
 Phase: 2
-Estimated: 60 min
 Completed: 2026-09-14
 Owner: AI + Developer
 

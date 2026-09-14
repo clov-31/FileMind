@@ -18,7 +18,7 @@ Phase 2 — Interactive Chat Agent
 
 ## In Progress
 
-None
+- TASK-0022 — delete_file() (architect plan done, awaiting Builder)
 
 ## Blocked
 
@@ -26,13 +26,19 @@ None
 
 ## Next
 
-TASK-0022 — delete_file()
+- TASK-0023 — rename_file() (tentative)
 
 ## Open Decisions
 
-- TASK-0021: confirm whether move_file must support folders
-- TASK-0021: confirm whether cross-volume move is required
-- TASK-0021: clarify atomicity contract for os.link + os.unlink
+### TASK-0021 (carried over, non-blocking for TASK-0022)
+
+- Whether move_file must support folders
+- Whether cross-volume move is required
+- Atomicity contract for os.link + os.unlink
+
+### TASK-0022
+
+- None yet. To be surfaced by Builder/Evaluator.
 
 ## Important Constraints
 
