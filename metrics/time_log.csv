@@ -2,3 +2,7 @@ date;task_id;phase;start;end;duration_min;mode;agent;session_id;notes
 13/09/2026;TASK-0021;evaluation;19:07;19:16;9;ai-assisted;ChatGPT;S-0021-EVAL-001-ChatGPT;
 14/09/2026;TASK-0021;documentation;17:05;17:28;23;ai-assisted;DeepSeek;S-0021-DOC-001-DeepSeek;
 14/09/2026;TASK-0022;planned;17:39;18:03;24;ai-assisted;DeepSeek;S-0022-ARC-001-DeepSeek;
+14/09/2026;TASK-0022;implementation;19:25;19:30;5;ai-generated;Cursor;S-0022-BLD-001-Cursor;
+14/09/2026;TASK-0022evaluation;;19:33;19:48;15;ai-assisted;DeepSeek;S-0022-EVAL-001-DeepSeek;
+14/09/2026;TASK-022;testing;19:52;19:56;4;human;;;
+14/09/2026;TASK-022;documentation;19:59;20:05;6;ai-assisted;Cursor;S-0022-DOC-001-Cursor;

@@ -1,0 +1,135 @@
+================================================================
+SESSION P-0023-BLD-001 — BUILDER — DEEPSEEK
+TASK-0023 — rename_file()
+================================================================
+
+ROLE: builder
+PHASE: implementation
+MODE: ai-assisted
+AGENT: DeepSeek (free plan)
+
+OBJECTIVE
+---------
+Hasilkan source code dan unit test untuk TASK-0023 rename_file()
+sesuai task file dan ADR-004 yang sudah di-freeze. Jangan redesign.
+
+KONTEKS PENTING
+---------------
+Kamu adalah LLM stateless tanpa akses filesystem.
+- Kamu TIDAK bisa membaca repo.
+- Kamu TIDAK bisa menjalankan pytest.
+- Kamu TIDAK bisa melihat error runtime.
+Semua input yang kamu butuhkan ada di bawah. Kalau butuh file lain,
+MINTA ke user dulu, jangan berasumsi.
+JANGAN mengklaim hasil test. Kamu tidak menjalankannya.
+
+INPUT FILES (DILAMPIRKAN DI BAWAH)
+----------------------------------
+1. AI_CONTEXT.md
+2. .context/current_state.md
+3. .context/tasks/active/TASK-0023-rename-file.md
+4. .context/decisions/ADR-001-rename-file-design.md
+5. agent/core/safety.py
+6. agent/core/audit.py
+7. agent/tools/move_file.py
+8. agent/tools/delete_file.py
+9. tests/test_move_file.py
+10. tests/test_delete_file.py
+
+Kalau butuh file lain (config.py, __init__.py, dll), MINTA dulu.
+
+KEPUTUSAN FINAL (JANGAN DITANYAKAN LAGI)
+----------------------------------------
+1. Task file ada di .context/tasks/active/.
+2. new_name berisi ".." di tengah (foo..bar.txt) → TOLAK.
+3. new_name hanya whitespace → TOLAK sebagai empty setelah .strip().
+
+DESIGN FREEZE (RINGKASAN ADR-001)
+---------------------------------
+Signature:
+  rename_file(path, new_name, config, *, dry_run=True, audit=None, tier="local") -> dict
+  Return dict: {success, message, data} — pola move_file/delete_file.
+
+Refusal (11 poin):
+  path invalid / out-of-root / tidak ada / bukan file reguler / directory /
+  di dalam quarantine / symlink keluar root / new_name kosong /
+  new_name "." atau ".." / new_name mengandung "/" "\" atau ".." /
+  src.name == new_name (case-sensitive).
+
+Collision:
+  resolve_collision seperti move_file: name (1).ext, name (2).ext, dst.
+  Case-only rename di Windows BUKAN collision → temp unique lalu final.
+
+Dry-run:
+  default True; tidak rename/link/unlink/mkdir user;
+  audit planned → ok + detail="dry_run".
+  Side effect FS hanya audit (+ AuditLog boleh mkdir parent log).
+  Ini keputusan, pin dengan test.
+
+Audit execute:
+  planned → attempt (os.link + os.unlink; case-only dua tahap dengan
+  planned masing-masing) → ok / failed.
+  Refusal → skipped hanya jika dry_run=False.
+
+Target:
+  new_name bukan path → TIDAK validate_path(new_name).
+  dst = parent / new_name. temp divalidasi must_exist=False.
+  Tidak ada exemption validate_path.
+
+FS:
+  TIDAK pakai os.rename / os.replace / shutil.move ke user path.
+  Claim nama via os.link lalu os.unlink source.
+
+OUTPUT YANG DIMINTA (URUT)
+--------------------------
+1. PLAN ulang (max 10 baris) — konfirmasi paham freeze. Jangan redesign.
+   Kalau ada konflik, tulis sebagai pertanyaan.
+2. agent/tools/rename_file.py — kode lengkap, siap copy-paste.
+3. tests/test_rename_file.py — test lengkap, siap copy-paste.
+4. Patch untuk agent/tools/__init__.py (kalau perlu registrasi).
+5. Draft .context/breadcrumbs/2026-09-15-<HHMM>-rename-file.md.
+6. Draft update .context/current_state.md (bagian yang berubah saja).
+7. Draft .context/sessions/S-0023-BLD-001-DeepSeek.md.
+
+FORMAT OUTPUT
+-------------
+- Setiap file dalam blok kode terpisah dengan label path jelas.
+- Jangan campur kode dengan penjelasan panjang.
+- Penjelasan hanya di PLAN dan section "Notes" di akhir.
+- Jangan generate file yang tidak diminta.
+
+PELAJARAN DARI TASK-0022 (WAJIB DITERAPKAN)
+-------------------------------------------
+F-1: Test symlink-out-of-root (skipif Windows tanpa privilege).
+F-2: Collision test MEMAKSA collision (monkeypatch datetime atau
+     pre-create exact candidate). Jangan assertion vacuous.
+F-3: Dry-run side-effect contract sudah diputuskan. Pin dengan test.
+F-4: Kalau ada infra dir creation, log "planned" dulu ATAU dokumentasikan
+     bahwa infra-dir creation di luar audited operation. Pin dengan test.
+F-5: Tidak ada exemption validate_path. Dokumentasikan di current_state.md.
+
+GUARDRAILS
+----------
+- Jangan redesign safety.py atau audit.py. Pakai apa adanya.
+- Jangan tambah dependency baru.
+- Jangan ubah signature move_file() atau delete_file().
+- Jangan gabungkan rename dengan delete/move logic.
+- Kalau butuh file di luar input, MINTA ke user dulu.
+- Kalau ada ambiguitas, TULIS sebagai pertanyaan. Jangan asumsi.
+- JANGAN klaim "test pass" — kamu tidak menjalankan test.
+
+VERIFIKASI (HUMAN-LED)
+----------------------
+Setelah kamu generate kode:
+- User copy-paste ke file.
+- User jalankan pytest.
+- Kalau ada error, user paste error ke kamu.
+- Kamu perbaiki HANYA bagian yang error. Jangan redesign.
+- Max 3 iterasi error. Lebih dari itu → plan dievaluasi ulang.
+
+HANDOFF
+-------
+Next session: S-0023-EVL-001 (Evaluator, DeepSeek).
+
+MULAI DENGAN: PLAN (max 10 baris). Lalu langsung ke output.
+================================================================

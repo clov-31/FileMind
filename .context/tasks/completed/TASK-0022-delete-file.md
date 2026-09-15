@@ -3,7 +3,6 @@
 
 **Status:** PLANNED  
 **Phase:** 2  
-**Estimated:** 90 min  
 **Depends on:** TASK-0021 (move_file, completed)  
 
 ---

@@ -1,0 +1,192 @@
+================================================================
+SESSION P-0023-EVL-002 — EVALUATOR — DEEPSEEK
+TASK-0023 — rename_file()  (SECOND PASS)
+================================================================
+
+ROLE: evaluator
+PHASE: evaluation
+MODE: ai-assisted
+AGENT: DeepSeek (free plan)
+
+OBJECTIVE
+---------
+Independent second-pass evaluation of TASK-0023 rename_file().
+Prior evaluation S-0023-EVL-001 returned fail with three blocking
+findings (F-1 __init__.py import, F-2 src == dst not refused, F-3
+dry-run audit contract mismatch). Builder session S-0023-BLD-002
+applied fixes, then a follow-up attribute-shadowing fix. Human
+reports pytest green. This session verifies whether the fixes
+actually close the prior blocking findings and whether the test
+suite genuinely pins the required contracts — NOT whether the
+suite runs.
+
+KONTEKS PENTING
+---------------
+Kamu adalah LLM stateless tanpa akses filesystem.
+- Kamu TIDAK bisa membaca repo.
+- Kamu TIDAK bisa menjalankan pytest.
+- Kamu TIDAK bisa memverifikasi klaim builder secara langsung.
+Semua input ada di bawah. Kalau butuh file lain, MINTA ke user.
+JANGAN mengarang temuan. Kalau tidak yakin, tulis
+"not verifiable from provided inputs".
+
+INPUT FILES (DILAMPIRKAN DI BAWAH)
+----------------------------------
+ 1. .context/tasks/active/TASK-0023-rename-file.md
+ 2. .context/decisions/ADR-001-rename-file-design.md
+ 3. agent/tools/rename_file.py
+ 4. agent/tools/__init__.py             # NEW — verify shadowing fix
+ 5. agent/tools/move_file.py            # baseline
+ 6. agent/tools/delete_file.py          # baseline
+ 7. tests/test_rename_file.py
+ 8. tests/test_move_file.py             # NEW — verify shadowing fix
+ 9. tests/test_delete_file.py           # NEW — verify shadowing fix
+10. Output pytest -v (post-fix, paste dari user)
+11. .context/sessions/S-0023-BLD-002-DeepSeek.md
+12. .context/breadcrumbs/2026-09-15-2200-rename-file-pass.md
+13. .context/current_state.md
+14. agent/core/safety.py                # verify reuse validate_path
+15. agent/core/audit.py                 # verify reuse AuditLog
+16. P-0023-EVL-001-deepseek.txt         # prior evaluation prompt
+17. S-0023-EVL-001-deepseek.md          # prior evaluation report
+
+JANGAN minta seluruh repo. Cukup file di atas.
+
+OUTPUT YANG DIMINTA
+-------------------
+Ikuti struktur S-0023-EVL-001 identik:
+
+    evaluation:
+    verdict: pass | conditional_pass | fail
+
+    prior_findings_resolution:
+        status: pass | conditional | fail
+        findings:
+        - id: F-1
+          title: ...
+          closed: true | false
+          evidence: ...
+        - id: F-2
+          ...
+        - id: F-3
+          ...
+
+    safety_findings:
+        status: pass | conditional | fail
+        findings:
+        - <item>
+        - ...
+
+    filesystem_semantics:
+        status: pass | conditional | fail
+        findings:
+        - <item>
+        - ...
+
+    audit_assessment:
+        status: pass | conditional | fail
+        findings:
+        - <item>
+        - ...
+
+    test_assessment:
+        status: pass | conditional | fail
+        findings:
+        - <item>
+        - ...
+
+    findings:
+    blocking:
+        - id: F-N
+          title: ...
+          detail: ...
+          action: ...
+    advisory:
+        - id: F-N
+          title: ...
+          detail: ...
+          action: ...
+
+    open_decisions:
+    - <decision yang perlu diambil manusia>
+
+    regression:
+    builder_claim: <angka passed / "reported green">
+    independently_verified: false   # always false unless you ran it
+    phase_1_changes_claimed: <none / ...>
+    phase_1_changes_verified: false
+
+    conclusion:
+    <ringkas: kenapa verdict ini>
+
+    handoff:
+    next: <close task / builder follow-up / testing session / ...>
+    then: <sesi berikutnya>
+
+Update:
+  - .context/tasks/active/TASK-0023-rename-file.md
+  - .context/current_state.md
+Create:
+  - .context/sessions/S-0023-EVL-002-DeepSeek.md
+
+FOKUS KHUSUS (SECOND PASS)
+--------------------------
+1. Prior F-1: does `agent/tools/__init__.py` contain any re-export of
+   tool callables that would shadow submodules of the same name?
+   Specifically: does `agent.tools.rename_file` resolve to a module,
+   not a function? Confirm no other module has a matching attribute
+   shadow. Cross-check test_move_file.py and test_delete_file.py
+   monkeypatch targets against the current __init__.py.
+2. Prior F-2: does `rename_file()` return `success=False` for
+   `src == dst`? Does `test_same_name_is_refused_as_noop` assert
+   `success is False` (not merely `status == "skipped"`)?
+3. Prior F-3: does `test_dry_run_writes_audit_per_adr_001` pin the
+   ADR-001 contract (audit dir created; entries `planned` then `ok`
+   with `detail == "dry_run"`; source unchanged; destination absent)?
+   Is the old contradicting test truly removed?
+4. F-4 check: does the POSIX case-only path still route through the
+   Windows temp-name branch? Confirm advisory-only, not blocking.
+5. F-5 check: symlink-in-root semantics — is the intended behavior
+   documented (link rename vs target rename)? If ambiguous, keep as
+   advisory.
+6. Shadowing regression: verify no other `monkeypatch.setattr` target
+   in the suite resolves through a shadowed attribute. Grep for
+   `agent.tools.<mod>.<x>` in test files and match against __init__.py.
+7. Reuse discipline: confirm `rename_file.py` imports `validate_path`,
+   `AuditLog`, and the collision helper from `organize_files` — no
+   duplicated safety/audit logic.
+8. Case-only rename on Windows: is the test gated with skipif for
+   non-Windows? Is the happy path exercised?
+
+GUARDRAILS
+----------
+- Jangan redesign implementasi.
+- Jangan propose perubahan kecuali ada evidence.
+- Jangan klaim "test pass" — kamu tidak menjalankannya.
+- Builder claim: "reported green by human" — mark
+  independently_verified: false unless you actually ran pytest.
+- Kalau tidak bisa verifikasi, tulis
+  "not verifiable from provided inputs".
+- Verdict default = conditional_pass kalau ada blocking gap.
+- Passing test suite is NOT sufficient for `pass` if any prior
+  blocking finding is only superficially closed (e.g., test renamed
+  but assertion unchanged).
+
+REKOMENDASI VERDICT
+-------------------
+- pass: semua prior blocking findings closed with hard evidence;
+  acceptance criteria terpenuhi; F-1/F-2/F-3 pinned by tests that
+  cannot pass vacuously.
+- conditional_pass: prior findings superficially closed, or 1–2
+  non-blocking gaps / open decisions before close.
+- fail: bug nyata, safety hole, shadowing still present, atau
+  acceptance criteria tidak terpenuhi.
+
+HANDOFF
+-------
+- pass → next testing session S-0023-TST-001.
+- conditional_pass → builder follow-up S-0023-BLD-003.
+- fail → builder follow-up S-0023-BLD-003 with explicit blocking list.
+
+MULAI DENGAN: evaluation (langsung ke struktur).
+================================================================

@@ -1,0 +1,146 @@
+================================================================
+SESSION P-0023-EVL-001 — EVALUATOR — DEEPSEEK
+TASK-0023 — rename_file()
+================================================================
+
+ROLE: evaluator
+PHASE: evaluation
+MODE: ai-assisted
+AGENT: DeepSeek (free plan)
+
+OBJECTIVE
+---------
+Evaluasi independen terhadap implementasi TASK-0023 rename_file().
+Fokus: safety findings, filesystem semantics, audit assessment,
+test assessment. Khususnya verifikasi F-1 & F-2 dari TASK-0022.
+
+KONTEKS PENTING
+---------------
+Kamu adalah LLM stateless tanpa akses filesystem.
+- Kamu TIDAK bisa membaca repo.
+- Kamu TIDAK bisa menjalankan pytest.
+- Kamu TIDAK bisa memverifikasi klaim builder secara langsung.
+Semua input ada di bawah. Kalau butuh file lain, MINTA ke user.
+JANGAN mengarang temuan. Kalau tidak yakin, tulis "not verifiable
+from provided inputs".
+
+INPUT FILES (DILAMPIRKAN DI BAWAH)
+----------------------------------
+1. .context/tasks/active/TASK-0023-rename-file.md
+2. .context/decisions/ADR-001-rename-file-design.md
+3. agent/tools/rename_file.py
+4. tests/test_rename_file.py
+5. Output pytest -v (paste dari user)
+6. .context/breadcrumbs/2026-09-15-2052-rename-file.md
+7. .context/sessions/S-0023-BLD-001-deepseek.md
+8. .context/current_state.md
+9. agent/core/safety.py (untuk verifikasi reuse validate_path)
+10. agent/core/audit.py (untuk verifikasi reuse AuditLog)
+11. agent/tools/move_file.py (baseline pola)
+12. agent/tools/delete_file.py (baseline pola)
+
+JANGAN minta seluruh repo. Cukup file di atas.
+
+OUTPUT YANG DIMINTA
+-------------------
+1. Ikuti struktur S-0022-EVL-001:
+
+    evaluation:
+    verdict: pass | conditional_pass | fail
+
+    safety_findings:
+        status: pass | conditional | fail
+        findings:
+        - <item>
+        - ...
+
+    filesystem_semantics:
+        status: pass | conditional | fail
+        findings:
+        - <item>
+        - ...
+
+    audit_assessment:
+        status: pass | conditional | fail
+        findings:
+        - <item>
+        - ...
+
+    test_assessment:
+        status: pass | conditional | fail
+        findings:
+        - <item>
+        - ...
+
+    findings:
+    blocking:
+        - id: F-N
+        title: ...
+        detail: ...
+        action: ...
+    advisory:
+        - id: F-N
+        title: ...
+        detail: ...
+        action: ...
+
+    open_decisions:
+    - <decision yang perlu diambil manusia>
+
+    regression:
+    builder_claim: <angka passed>
+    independently_verified: false   # selalu false kecuali kamu benar-benar jalankan
+    phase_1_changes_claimed: <none / ...>
+    phase_1_changes_verified: false
+
+    conclusion:
+    <ringkas: kenapa verdict ini>
+
+    handoff:
+    next: <builder follow-up / close task / ...>
+    then: <sesi berikutnya>
+
+2. Update 'TASK-0023-rename-file.md'
+3. Update 'current_state.md'
+4. Create file for this session. 'S-0023-EVL-001-deepseek.md'
+
+
+FOKUS KHUSUS
+------------
+1. F-1 pattern: apakah ada test symlink-out-of-root eksplisit?
+   Kalau tidak, itu blocking.
+2. F-2 pattern: apakah collision test memaksa collision?
+   Cek apakah test pre-create exact candidate atau monkeypatch datetime.
+   Kalau assertion bisa pass tanpa collision nyata → blocking.
+3. F-3: apakah dry-run side-effect contract dipin dengan test?
+4. F-4: apakah infra dir creation di-log planned dulu, atau
+   didokumentasikan di luar audited operation?
+5. F-5: apakah ada exemption validate_path yang tidak didokumentasikan?
+6. Case-only rename di Windows: apakah ada test skipif non-Windows?
+7. Apakah rename_file.py reuse validate_path, AuditLog, dan pola
+   move_file tanpa duplikasi logic?
+
+GUARDRAILS
+----------
+- Jangan redesign implementasi.
+- Jangan propose perubahan kecuali ada evidence.
+- Jangan klaim "test pass" — kamu tidak menjalankannya.
+- Kalau tidak bisa verifikasi, tulis "not verifiable from provided inputs".
+- Verdict default = conditional_pass kalau ada blocking gap.
+
+REKOMENDASI VERDICT
+-------------------
+- pass: semua acceptance criteria terpenuhi, F-1 & F-2 ada, tidak ada
+  blocking gap.
+- conditional_pass: ada 1–2 blocking gap atau open decision yang harus
+  diputuskan sebelum close.
+- fail: ada bug nyata, safety hole, atau acceptance criteria tidak
+  terpenuhi.
+
+HANDOFF
+-------
+Kalau conditional_pass → next builder follow-up S-0023-BLD-002.
+Kalau pass → next testing session S-0023-TST-001.
+
+MULAI DENGAN: evaluation (langsung ke struktur).
+================================================================

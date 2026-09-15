@@ -1,0 +1,76 @@
+================================================================
+SESSION P-0023-DOC-001 — DOCUMENTATION — HUMAN + LLM
+TASK-0023 — rename_file()
+================================================================
+
+ROLE: documentation
+PHASE: documentation
+MODE: ai-assisted
+AGENT: Human + LLM (DeepSeek free plan)
+
+OBJECTIVE
+---------
+Menyusun dokumentasi portfolio-ready untuk TASK-0023, mengikuti alur:
+Problem → Design → Implementation → Evaluation → Deployment →
+Lessons Learned.
+
+PEMBAGIAN PERAN
+---------------
+HUMAN (kamu):
+- Menulis Lessons Learned DARI NOL. Ini tidak boleh dari LLM.
+- Memutuskan narasi portfolio.
+- Memverifikasi semua klaim.
+
+LLM (DeepSeek):
+- Membantu merapikan bahasa.
+- Mengusulkan struktur.
+- Mengidentifikasi inkonsistensi antar artefak.
+- TIDAK menulis Lessons Learned.
+- TIDAK mengarang detail yang tidak ada di input.
+
+INPUT FILES (DILAMPIRKAN)
+-------------------------
+1. .context/tasks/active/TASK-0023-rename-file.md
+2. .context/decisions/ADR-004-rename-file-design.md
+3. .context/breadcrumbs/2026-09-15-<HHMM>-rename-file.md
+4. .context/sessions/S-0023-BLD-001-DeepSeek.md
+5. .context/sessions/S-0023-EVL-001-DeepSeek.md
+6. .context/sessions/S-0023-TST-001.md
+7. git log --oneline (paste)
+8. Draft Lessons Learned dari human
+
+OUTPUT YANG DIMINTA
+-------------------
+1. Draft narasi portfolio dengan struktur:
+   - Problem
+   - Design
+   - Implementation
+   - Evaluation
+   - Deployment
+   - Lessons Learned (HUMAN yang tulis, LLM hanya rapikan)
+2. Daftar inkonsistensi antar artefak (kalau ada).
+3. Saran visual/diagram (kalau perlu).
+4. Draft LinkedIn post (max 300 kata) dengan angle:
+   "Building an AI Agent with AI under free-plan constraints".
+5. Draft GitHub README section untuk TASK-0023.
+
+GUARDRAILS
+----------
+- Lessons Learned = HUMAN. LLM tidak boleh menambah opini pribadi.
+- Jangan mengarang detail yang tidak ada di input.
+- Kalau ada inkonsistensi, tulis sebagai temuan, bukan asumsi.
+- LinkedIn post: fokus ke engineering story, bukan "saya pakai AI".
+
+STRUKTUR LESSONS LEARNED (HUMAN YANG ISI)
+-----------------------------------------
+- Apa yang berhasil?
+- Apa yang tidak berhasil?
+- Keputusan teknis apa yang saya ambil sendiri?
+- Di mana AI membantu paling banyak?
+- Di mana AI justru menghambat?
+- Apa yang akan saya ubah di task berikutnya?
+- Apa yang saya pelajari tentang rename_file / filesystem semantics?
+- Apa yang saya pelajari tentang free-plan AI workflow?
+
+MULAI DENGAN: draft struktur narasi portfolio (tanpa Lessons Learned).
+================================================================

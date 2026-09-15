@@ -29,4 +29,4 @@ CLI → Chat Loop → Tool Dispatcher → File Tools
 - Roadmap: docs/ROADMAP.md
 
 ## Current Task
-TASK-0022 – Implement delete_file( ) as quarantine move.
+TASK-0023 – Implement rename_file().

@@ -1,0 +1,190 @@
+evaluation:
+  verdict: pass
+
+  prior_findings_resolution:
+    status: pass
+    findings:
+      - id: F-1
+        title: "__init__.py stale `scan_folder` import"
+        closed: true
+        evidence: >
+          agent/tools/__init__.py now contains only a docstring — no
+          imports, no `__all__`. Tests import tools directly from their
+          submodules (`from agent.tools.rename_file import rename_file`,
+          etc.), which leaves `agent.tools.<mod>` bound to the module,
+          not a function. Post-fix pytest output shows 0 collection
+          errors (was 3). Monkeypatch targets
+          `agent.tools.rename_file._move_without_overwrite`,
+          `agent.tools.rename_file.os.link`,
+          `agent.tools.move_file._move_without_overwrite`,
+          `agent.tools.move_file.os.link`,
+          `agent.tools.delete_file._move_without_overwrite`,
+          `agent.tools.delete_file.datetime` all resolve to submodules.
+      - id: F-2
+        title: "src == dst not refused"
+        closed: true
+        evidence: >
+          rename_file.py no-op branch now returns
+          `_result(False, "Rename refused: …", status="skipped", …)`.
+          test_same_name_is_refused_as_noop asserts
+          `result["success"] is False` — not merely status. Not
+          superficially renamed; behaviour changed in source.
+      - id: F-3
+        title: "dry-run audit contract mismatch"
+        closed: true
+        evidence: >
+          Old `test_dry_run_does_not_create_audit_directory` removed;
+          new `test_dry_run_writes_audit_per_adr_001` asserts
+          `config.log_path.exists()` is True, entries are
+          ["planned","ok"], last entry detail == "dry_run", source
+          exists, destination absent. current_state.md F-3 entry
+          amended to declare ADR-001 authoritative. Implementation
+          unchanged (already matched ADR-001); only doc/test aligned.
+
+  safety_findings:
+    status: pass
+    findings:
+      - "validate_path called on `path` (must_exist=True) and on
+        `proposed_destination` / `temp_path` / `final_destination`
+        (must_exist=False). No exemption."
+      - "new_name validated as bare filename: rejects empty-after-strip,
+        '.', '..', '/', '\\', literal '..' anywhere, leading/trailing
+        whitespace. Matches ADR-001 refusal list."
+      - "Quarantine dir refusal present for both inside-quarantine file
+        and the quarantine dir itself."
+      - "Symlink-out-of-root refused by validate_path resolution;
+        explicit test present and skipif-guarded (SKIPPED on this host
+        per pytest output — expected Windows privilege behaviour)."
+      - "Directory input refused; non-regular-file refused."
+      - "No os.rename / os.replace / shutil.move on user paths; uses
+        os.link + os.unlink through `_move_without_overwrite` (same
+        primitive as move_file.py)."
+
+  filesystem_semantics:
+    status: pass
+    findings:
+      - "Rename stays in same parent; destination.parent asserted equal
+        to source parent in test."
+      - "F-2 satisfied: collision forced via pre-created exact candidate
+        ('renamed.txt'), suffix resolves to 'renamed (1).txt'. Double
+        collision test pre-creates 'renamed (1).txt' too. Race test
+        forces a live FileExistsError via monkeypatched os.link. No
+        vacuous assertions."
+      - "Case-only rename on Windows routed via a unique temp name in
+        the same parent, then temp -> final. test_case_only_rename_on_windows
+        runs on Windows (PASSED). POSIX variant skipped on Windows
+        (expected)."
+      - "Trailing separator path treated as file (PASSED)."
+      - "F-4 advisory persists: on POSIX, `_is_case_only_rename`
+        returns True for a case-variant target and the Windows temp
+        path is used. Happy path unaffected; a pre-existing case-variant
+        target would fail rather than collision-resolve. Documented as
+        advisory."
+      - "F-5 advisory persists: source is resolved before the symlink
+        check, so `is_symlink` is False on resolved paths; the inline
+        'rename the link itself' comment does not match actual
+        behaviour (target is renamed). Documented as advisory."
+
+  audit_assessment:
+    status: pass
+    findings:
+      - "Real execute: `planned` before `_move_without_overwrite`,
+        `ok`/`failed` after. Case-only path emits two independent
+        planned/ok pairs (source->temp, temp->final), matching ADR-001."
+      - "Dry run: `planned` then `ok` with detail='dry_run' per
+        ADR-001. Pinned by test_dry_run_writes_audit_per_adr_001."
+      - "Refusal audit only when dry_run=False, matching move_file /
+        delete_file. No-op refusal uses same gate."
+      - "Collision-race test asserts exact sequence
+        ['planned','failed','planned','ok'] — order is pinned."
+      - "AuditLog reuse confirmed: rename_file.py imports AuditLog, Tier
+        from agent.core.audit — no duplicate logger."
+
+  test_assessment:
+    status: pass
+    findings:
+      - "Provided post-fix pytest output: 91 passed, 2 skipped, 0
+        failed, 0 collection errors. Skips are the two legitimate
+        platform-specific tests (Windows symlink privilege, POSIX
+        case-only)."
+      - "F-1: symlink-out-of-root test present and skipif-guarded.
+        SKIPPED on this host — expected; not a fail."
+      - "F-2: collision tests force collision via pre-created exact
+        candidate and via monkeypatched os.link racing."
+      - "F-3: dry-run audit pinned by new test; contradicting test
+        removed."
+      - "F-4: test_no_infra_dir_created_by_real_rename pins no
+        additional infra dirs beyond the audit log."
+      - "F-5: documented in current_state.md — new_name not passed to
+        validate_path (bare filename); dst validated with
+        must_exist=False."
+      - "Case-only tests: Windows path exercised and PASSED; POSIX
+        variant SKIPPED on Windows as designed."
+      - "Reuse discipline: rename_file.py imports validate_path from
+        agent.core.safety, AuditLog/Tier from agent.core.audit, and
+        resolve_collision from agent.tools.organize_files. No
+        duplicated safety or audit logic."
+
+  findings:
+    blocking: []
+    advisory:
+      - id: F-4
+        title: "POSIX case-only rename routes through Windows temp path"
+        detail: >
+          `_is_case_only_rename` returns True on POSIX as well as
+          Windows. Happy-path behaviour is correct on POSIX (source
+          removed, target created). Only when a pre-existing
+          case-variant target already exists does the POSIX path fail
+          instead of falling back to collision resolution.
+        action: >
+          Optional. Gate the temp-name branch to Windows, or add
+          collision resolution for the case-variant target on POSIX.
+          Not required to close TASK-0023.
+
+      - id: F-5
+        title: "Symlink-in-root semantics comment/behavior mismatch"
+        detail: >
+          `source = path_input.resolve()` resolves symlinks before the
+          `is_symlink()` check, so a symlink inside root pointing to a
+          file inside root has its *target* renamed, not the link.
+          The inline comment claims the link is renamed. The effective
+          behavior (renaming the target) is arguably the intended
+          semantics for "rename in place", but the comment is stale.
+        action: >
+          Optional. Either update the comment to match behaviour, or
+          preserve the link by avoiding `.resolve()` for the symlink
+          check. Not required to close TASK-0023.
+
+      - id: F-6
+        title: "Case-only second stage uses raw os.link/os.unlink"
+        detail: >
+          In the case-only branch, the temp -> final step is inlined
+          with raw os.link / os.unlink instead of calling
+          `_move_without_overwrite`. Same primitive, minor duplication.
+        action: >
+          Optional. Reuse the helper for symmetry. Not required.
+
+  open_decisions:
+    - "Whether to promote F-4 (POSIX case-only collision) from advisory
+      to a follow-up task, or accept the current behaviour. Default:
+      accept, since scope is Windows-first and ADR-001 does not require
+      POSIX collision for case-only renames."
+
+  regression:
+    builder_claim: "reported green by human: 91 passed, 2 skipped"
+    independently_verified: false
+    phase_1_changes_claimed: "none (only agent/tools/__init__.py, which is Phase 2 surface)"
+    phase_1_changes_verified: false
+
+  conclusion: >
+    All three prior blocking findings from S-0023-EVL-001 are closed
+    with hard evidence in source, tests, and pytest output. No
+    re-export shadowing remains; no-op refusal is enforced at the
+    source level and asserted with `is False`; dry-run audit contract
+    is pinned to ADR-001. F-1 and F-2 patterns are satisfied with
+    non-vacuous tests. Remaining issues are advisory only (F-4, F-5,
+    F-6) and do not violate acceptance criteria. Verdict: pass.
+
+  handoff:
+    next: "Close TASK-0023 as pass (S-0023-EVL-002)."
+    then: "S-0023-TST-001 (testing session) or proceed to next Phase 2 task per roadmap."

@@ -1,0 +1,136 @@
+================================================================
+SESSION P-0023-BLD-001 — BUILDER — AGENT
+TASK-0023 — rename_file()
+================================================================
+
+ROLE: builder
+PHASE: implementation
+MODE: ai-assisted
+AGENT: Cursor
+
+OBJECTIVE
+---------
+Implement TASK-0023 rename_file() sesuai task file. Ikuti pola
+move_file.py dan delete_file.py. Jangan redesign komponen lain.
+
+CONTEXT BUDGET (WAJIB DIPATUHI)
+-------------------------------
+ALWAYS LOAD (baca dulu, jangan skip):
+  - AI_CONTEXT.md
+  - AI_RULES.md
+  - .context/current_state.md
+  - .context/tasks/active/TASK-0023-rename-file.md
+  - agent/core/safety.py
+  - agent/core/audit.py
+  - agent/tools/move_file.py
+  - agent/tools/delete_file.py
+
+LOAD ONLY IF NEEDED:
+  - tests/test_move_file.py (untuk pola fixture & collision test)
+  - tests/test_delete_file.py (untuk pola refusal & symlink test)
+  - agent/core/config.py (kalau butuh quarantine/watch root path)
+
+DO NOT LOAD (kecuali diminta eksplisit):
+  - DEVLOG.md
+  - ROADMAP.md
+  - PHASE_1.md / PHASE_2.md
+  - ARCHITECTURE.md
+  - session notes lain
+  - source code di luar agent/tools/, agent/core/, tests/test_rename_file.py
+
+Jangan membaca seluruh repository. Jangan "understand the whole project".
+Cukup context di atas.
+
+INPUTS
+------
+  - AI_CONTEXT.md
+  - AI_RULES.md
+  - .context/current_state.md
+  - .context/tasks/active/TASK-0023-rename-file.md
+  - agent/core/safety.py
+  - agent/core/audit.py
+  - agent/tools/move_file.py
+  - agent/tools/delete_file.py
+
+OUTPUTS (WAJIB)
+---------------
+1. agent/tools/rename_file.py
+2. tests/test_rename_file.py
+3. Update agent/tools/__init__.py jika perlu registrasi
+4. .context/breadcrumbs/2026-09-15-<HHMM>-rename-file.md
+5. Update .context/current_state.md
+6. .context/sessions/S-0023-BLD-001-Cursor.md
+
+WORKFLOW (IKUTI URUTAN)
+-----------------------
+1. Baca AI_CONTEXT.md + current_state.md + TASK-0023.
+2. Baca safety.py, audit.py, move_file.py, delete_file.py.
+3. Tulis PLAN singkat (max 10 baris) di awal response:
+   - signature final
+   - refusal list
+   - collision strategy
+   - dry-run contract (apakah menyentuh FS atau tidak)
+   - audit order (planned → attempt → result)
+   - apakah target path divalidasi atau exempt (dan alasannya)
+4. STOP. Tunggu approval user sebelum menulis kode.
+   (Breadcrumb Protocol: plan butuh explicit approval.)
+5. Setelah approved: implement rename_file.py.
+6. Tulis tests/test_rename_file.py.
+7. Jalankan pytest.
+8. Update breadcrumb, current_state.md, session note.
+9. Laporkan hasil.
+
+CONSTRAINTS KHUSUS
+------------------
+- rename_file() = rename in-place. BUKAN move antar folder.
+  Kalau butuh pindah folder, delegate ke move_file().
+- TIDAK boleh pakai os.rename / os.replace / shutil.move langsung
+  ke user path tanpa lewat safety layer.
+- TIDAK boleh overwrite. Target exists → suffix "(1)", "(2)", dst.
+- Dry-run default True.
+- Audit before AND after (kecuali dry-run, ikuti contract yang
+  kamu putuskan dan dokumentasikan).
+- new_name harus bare filename: tolak "/", "\", "..", ".".
+- src == dst → tolak (no-op refusal).
+- Case-only rename di Windows harus support lewat temp intermediate.
+- Symlink menunjuk keluar root → tolak lewat validate_path.
+- Jangan ubah Phase 1 files kecuali agent/tools/__init__.py.
+
+PELAJARAN DARI TASK-0022 (WAJIB DITERAPKAN)
+-------------------------------------------
+F-1: Sertakan test symlink-out-of-root (skipif Windows tanpa privilege).
+F-2: Collision test harus MEMAKSA collision. Monkeypatch datetime atau
+     pre-create exact candidate name. Jangan assertion vacuous.
+F-3: Tentukan & dokumentasikan dry-run side-effect contract. Pin dengan test.
+F-4: Kalau ada infra dir creation, log "planned" dulu ATAU dokumentasikan
+     bahwa infra-dir creation di luar audited operation. Pin dengan test.
+F-5: Kalau ada path yang exempt dari validate_path, dokumentasikan di
+     current_state.md Open Decisions.
+
+GUARDRAILS
+----------
+- Jangan redesign safety.py atau audit.py. Pakai apa adanya.
+- Jangan tambah dependency baru.
+- Jangan ubah signature move_file() atau delete_file().
+- Jangan gabungkan rename dengan delete/move logic.
+- Kalau ada ambiguitas, TULIS sebagai pertanyaan di plan. Jangan asumsi.
+- Kalau butuh file di luar context budget, MINTA ke user dulu.
+
+SELESAI = EVIDENCE
+------------------
+Task tidak selesai karena kamu bilang selesai. Selesai berarti:
+  - source code ada
+  - tests ada & pass (lampirkan output pytest)
+  - breadcrumb updated
+  - current_state.md updated
+  - session note ada
+  - tidak ada Phase 1 file yang berubah tanpa alasan
+
+HANDOFF
+-------
+Setelah selesai, next session = S-0023-EVL-001 (evaluator, Cursor).
+Fokus evaluator: safety findings, filesystem semantics, audit assessment,
+test assessment (khususnya F-1 & F-2 pattern).
+
+MULAI DENGAN: PLAN (max 10 baris). STOP. Tunggu approval.
+================================================================

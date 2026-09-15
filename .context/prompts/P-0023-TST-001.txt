@@ -1,0 +1,105 @@
+================================================================
+SESSION P-0023-TST-001 — TESTING — HUMAN + LLM
+TASK-0023 — rename_file()
+================================================================
+
+ROLE: testing
+PHASE: testing
+MODE: ai-assisted
+AGENT: Human + LLM (DeepSeek free plan)
+
+OBJECTIVE
+---------
+Verifikasi rename_file() di lingkungan nyata: Windows, CPU-only,
+filesystem NTFS, sandbox folder. Bukan hanya unit test — tapi
+perilaku end-to-end di sandbox.
+
+PEMBAGIAN PERAN
+---------------
+HUMAN (kamu):
+- Menjalankan semua test di mesin nyata.
+- Membuat sandbox folder & file.
+- Menjalankan skenario manual.
+- Mencatat hasil.
+- Memutuskan verdict akhir.
+
+LLM (DeepSeek):
+- Membantu interpretasi hasil.
+- Mengusulkan skenario tambahan yang belum tercakup.
+- Menganalisis pola kegagalan.
+- TIDAK menjalankan test.
+- TIDAK mengklaim hasil.
+
+INPUT FILES (DILAMPIRKAN)
+-------------------------
+1. .context/tasks/active/TASK-0023-rename-file.md
+2. .context/decisions/ADR-004-rename-file-design.md
+3. agent/tools/rename_file.py
+4. tests/test_rename_file.py
+5. Output pytest -v (paste)
+6. S-0023-EVL-001 findings (paste)
+
+OUTPUT YANG DIMINTA DARI LLM
+----------------------------
+1. Skenario manual tambahan yang belum dicakup unit test.
+   Contoh:
+   - Rename file yang sedang terbuka di aplikasi lain.
+   - Rename file di folder read-only.
+   - Rename dengan nama yang sangat panjang (>255 char).
+   - Rename file dengan karakter unicode.
+   - Rename file dengan nama reserved Windows (CON, PRN, AUX, NUL).
+   - Case-only rename di Windows.
+   - Rename file di path dengan spasi & karakter khusus.
+2. Checklist verifikasi untuk tiap skenario.
+3. Interpretasi hasil setelah human paste output.
+4. Rekomendasi: pass / conditional_pass / fail, dengan alasan.
+
+STRUKTUR SESSION NOTE (HUMAN YANG TULIS)
+----------------------------------------
+session_id: S-0023-TST-001
+task_id: TASK-0023
+role: testing
+phase: testing
+mode: ai-assisted
+agent: Human + DeepSeek
+started_at: 2026-09-15
+
+environment:
+  os: Windows 11 (sebutkan versi)
+  fs: NTFS
+  cpu: i5-12450H
+  ram: 16 GB
+  python: <versi>
+  pytest: <versi>
+
+unit_test:
+  command: pytest tests/test_rename_file.py -v
+  result: <X passed, Y failed>
+
+manual_scenarios:
+  - id: MS-1
+    description: <skenario>
+    result: pass | fail | skip
+    evidence: <screenshot / output / catatan>
+  - ...
+
+findings:
+  - <temuan>
+
+verdict: pass | conditional_pass | fail
+
+next:
+  - S-0023-DOC-001
+
+notes:
+  - <catatan human>
+
+GUARDRAILS
+----------
+- LLM tidak boleh mengklaim hasil test. Hanya human.
+- LLM tidak boleh mengubah source code di sesi ini.
+- Kalau ada bug, catat sebagai temuan, bukan langsung fix.
+- Fokus pada perilaku nyata, bukan hanya unit test.
+
+MULAI DENGAN: daftar skenario manual tambahan.
+================================================================
